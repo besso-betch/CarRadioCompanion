@@ -1,0 +1,117 @@
+﻿@page "/settings"
+@inject HttpClient Http
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+<h3>Settings</h3>
+
+@if (radiosenders == null)
+{
+    <i>Loading parameters...</i>
+}
+else
+{
+    @if (radiosender == null)
+    {
+        <table class="table table-striped">
+            @foreach (var radio in radiosenders)
+            {
+                <tr>
+                    <td>@radio.Name</td>
+                    <th>
+                        <button class="btn btn-info" @onclick="(()=> Edit(radio.Id))">
+                            <span class="oi oi-pencil" aria-hidden="true"></span>
+                        </button>
+                    </th>
+                </tr>
+            }
+        </table>
+        <button class="btn btn-success" @onclick="CreateNew">
+            <span class="oi oi-plus" aria-hidden="true"></span>
+        </button>
+    }
+    else
+    {
+        <EditForm Model="radiosender" OnValidSubmit="Save">
+            <DataAnnotationsValidator></DataAnnotationsValidator>
+            <div class="form-group">
+                <label for="name">Name</label>
+                <InputText class="form-control" id="name" @bind-Value="radiosender.Name" />
+                <ValidationMessage For="@(()=> radiosender.Name)"></ValidationMessage>
+            </div>
+            <div class="form-group">
+                <label for="url">URL</label>
+                <InputText class="form-control" id="url" @bind-Value="radiosender.Url" />
+                <ValidationMessage For="@(()=> radiosender.Url)"></ValidationMessage>
+            </div>
+            <button type="button" class="btn btn-info" @onclick="@(() => radiosender = null)">
+                <span class="oi oi-arrow-left" aria-hidden="true"></span>
+            </button>
+            @if (radiosender.Id > 0)
+            {
+                <button type="button" class="btn btn-danger" @onclick="Delete">
+                    <span class="oi oi-trash" aria-hidden="true"></span>
+                </button>
+            }
+            <button type="submit" class="btn btn-success">
+                <span class="oi oi-check" aria-hidden="true"></span>
+            </button>
+        </EditForm>
+    }
+}
+
+
+@code {
+
+    Radiosender radiosender;
+
+    List<Radiosender> radiosenders;
+
+    protected override async Task OnInitializedAsync()
+    {
+        radiosenders = await localStorage.GetItemAsync<List<Radiosender>>("lumiaRadio");
+    }
+
+    private void Edit(int id)
+    {
+        radiosender = radiosenders.First(r => r.Id == id);
+    }
+
+    private void CreateNew()
+    {
+        radiosender = new Radiosender();
+    }
+
+    private async Task Save()
+    {
+        if (radiosender.Id > 0) //edit
+        {
+            await localStorage.SetItemAsync<List<Radiosender>>("lumiaRadio", radiosenders);
+            radiosender = null;
+        }
+        else //new
+        {
+            Radiosender radiosenderLast = radiosenders.OrderByDescending(r => r.Id).FirstOrDefault();
+
+            if (radiosender == null)
+                radiosender.Id = 1;
+            else
+                radiosender.Id = radiosenderLast.Id + 1;
+
+            radiosenders.Add(radiosender);
+
+            await localStorage.SetItemAsync<List<Radiosender>>("lumiaRadio", radiosenders);
+            radiosender = null;
+        }
+    }
+
+    private async Task Delete()
+    {
+        Radiosender radiosenderDelete = radiosenders.First(r => r.Id == radiosender.Id);
+
+        radiosenders.Remove(radiosenderDelete);
+
+        await localStorage.SetItemAsync<List<Radiosender>>("lumiaRadio", radiosenders);
+        radiosender = null;
+    }
+
+}

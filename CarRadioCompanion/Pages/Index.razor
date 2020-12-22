@@ -1,0 +1,57 @@
+﻿@page "/"
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+<h3>Radio</h3>
+
+@if (radiosenders == null)
+{
+    <i>Loading playlist...</i>
+}
+else
+{
+    @foreach (var radio in radiosenders)
+    {
+        <button class="btn btn-@(radio.Id==radiosender.Id ? "danger" : "dark")  btn-block" @onclick="@(()=> SelectRadio(radio.Id))">@radio.Name</button>
+    }
+    <br />
+    <h4 class="text-center text-info font-weight-bold">@radiosender.Name</h4>
+    <div class="text-center">
+        @if (radiosender.Url != null)
+        {
+            <audio id="lumiaRadio" controls autoplay src="@radiosender.Url">
+            </audio>
+        }
+    </div>
+}
+
+@code
+{
+    Radiosender radiosender = new Radiosender();
+
+    List<Radiosender> radiosenders;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        radiosenders = await localStorage.GetItemAsync<List<Radiosender>>("lumiaRadio");
+
+        if (radiosenders == null)
+        {
+            radiosenders = new List<Radiosender>
+        {
+                new Radiosender { Id=1, Name = "Antenne Bayern", Url ="https://s3-webradio.antenne.de/antenne" },
+                new Radiosender { Id=2, Name = "FFN", Url = "https://ffn-de-hz-fal-stream02-cluster01.radiohost.de/ffn_mp3-192" },
+                new Radiosender { Id=3, Name = "Radio Norge", Url = "https://edge-bauerno-02-gos1.sharp-stream.com/radionorge_no_mp3" },
+                new Radiosender { Id=4, Name="Hochstift",Url = "https://radiohochstift-ais-edge-3103-fra-eco-cdn.cast.addradio.de/radiohochstift/live/mp3/high?ar-distributor=f0e3&_art=dj0yJmlwPTg4Ljg4LjE3OS41NiZpZD1pY3NjeGwtdWxvZmFzaW1iJnQ9MTU5NDQwMzEzOSZzPTc4NjZmMjljIzg3ZTRiOTc0MGE2NzkyODU0MjdhZjZjN2I4ZTc1NmZi"}
+            };
+        }
+
+        await localStorage.SetItemAsync<List<Radiosender>>("lumiaRadio", radiosenders);
+    }
+
+    void SelectRadio(int id)
+    {
+        radiosender = radiosenders.First(r => r.Id == id);
+    }
+
+}
